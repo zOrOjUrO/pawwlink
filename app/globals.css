@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* PawLink brand tokens (Tailwind v4 @theme) — see docs/brand-identity.md.
+   Frontend pages come later; tokens are scaffolded here so they're ready. */
+@theme {
+  --color-rescue: #1b9c8f; /* Rescue Teal — primary */
+  --color-slate-brand: #1f2a37; /* Deep Slate — text/headers */
+  --color-amber-alert: #f4a340; /* Amber Alert — CTA / warnings */
+  --color-meadow: #3fb97a; /* success / healthy */
+  --color-signal: #e0533d; /* danger / critical */
+  --color-cloud: #f7f9fa; /* app background */
+  --color-mist: #d9e0e3; /* borders */
+
+  --font-display: "Plus Jakarta Sans", Poppins, system-ui, sans-serif;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+}
