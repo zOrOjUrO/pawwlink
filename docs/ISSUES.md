@@ -18,7 +18,7 @@ Created automatically by `scripts/setup-github.sh`. Owner in brackets.
 ## Backend (shared)
 7. **Integrate real registries** — live Amivedi/NDG/PetBase clients behind `runFederatedQuery`;
    caching, rate limits, per-source fallback to mock.
-8. **Real notifications** — Twilio SMS + WhatsApp + web push behind the `Notifier` interface;
+8. **Real notifications** — Bird SMS + WhatsApp + web push behind the `Notifier` interface;
    receipts, retries, opt-in/out.
 9. **GDPR/compliance** — PII minimization, consent, retention, audit log, EU residency, erasure.
 10. **DB migration & RLS** — align live `animals`/`owners` with `schema.sql`; create

@@ -66,7 +66,14 @@ route handlers.
 | `EMBEDDING_DIM` | `512` | server | must match `vector(512)` in schema |
 | `VISION_PROVIDER` | `mock` | server | `pixtral` to go live |
 | `MISTRAL_API_KEY` | — | **server** | only if `VISION_PROVIDER=pixtral` |
-| `NOTIFIER_PROVIDER` | `mock` | server | only mock today |
+| `NOTIFIER_PROVIDER` | `mock` | server | `mock`, `bird`, or `email` |
+| `BIRD_ACCESS_KEY` | `live_xxxxxxx` | server | required for `bird` |
+| `BIRD_ORIGINATOR` | `PawLink` | server | required for `bird` SMS |
+| `EMAIL_SMTP_HOST` | `smtp.mailtrap.io` | server | required for `email` |
+| `EMAIL_SMTP_PORT` | `587` | server | required for `email` |
+| `EMAIL_SMTP_USER` | `smtp-user` | server | required for `email` |
+| `EMAIL_SMTP_PASS` | `smtp-pass` | server | required for `email` |
+| `EMAIL_FROM_ADDRESS` | `noreply@pawlink.app` | server | required for `email` |
 | `SHELTER_NAME` | `PawLink Rescue Shelter` | server | SMS copy |
 | `CONFIRM_BASE_URL` | `https://pawlink.vercel.app` | server | owner confirm link base |
 

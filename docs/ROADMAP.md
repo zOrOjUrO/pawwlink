@@ -9,7 +9,7 @@
 ## Phase 1 — Productionize the platform (post-hackathon)
 - **Real registry federation.** Replace the Amivedi/NDG/PetBase mocks with live API clients
   behind the existing interface; add caching, rate-limit handling, and per-source fallback.
-- **Real notifications.** Implement Twilio SMS, WhatsApp Business, and web push behind the
+- **Real notifications.** Implement Bird SMS, WhatsApp Business, and web push behind the
   `Notifier` interface; delivery receipts + retries; opt-in/opt-out.
 - **Semantic embeddings.** Swap the deterministic embedding for CLIP/DINOv2 (Maaz), benchmark
   match precision/recall, tune the pgvector index (lists/probes) and thresholds.

@@ -56,7 +56,7 @@ PawLink collapses intake → identification → reunification into seconds, and 
 | Animal Passport DB | ✅ **Done** | Supabase Postgres + **pgvector(512)** |
 | Federation — PawLink Visual DB | ✅ **Done** | pgvector cosine similarity (`match_animals` RPC) |
 | Federation — Amivedi / NDG / PetBase | 🟡 **Mocked** | 3 registries queried **in parallel**; demo chip resolves via Amivedi. Real APIs not yet integrated |
-| Notification Service | 🟡 **Skeleton** | Provider-agnostic `Notifier`; **MockNotifier** (console) live. Twilio/WhatsApp/push pending |
+| Notification Service | 🟡 **Skeleton** | Provider-agnostic `Notifier`; **MockNotifier** (console) live. Bird/WhatsApp/push pending |
 | Rescue Worker UI (web MVP) | ✅ **Done** | Intake / Passport / Dashboard pages |
 | Owner mobile app | ❌ **Not started** | Gokul |
 | Rescue worker native app | ❌ **Not started** | Gokul |

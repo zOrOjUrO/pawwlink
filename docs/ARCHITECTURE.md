@@ -65,7 +65,7 @@ logs to console and returns success.
 
 **Decision — provider-agnostic interface, mock implementation first.**
 *Justification:* a clean seam lets us demo the full reunification flow with zero SMS cost or
-third-party flakiness, then drop in Twilio / WhatsApp / web-push behind the same interface.
+third-party flakiness, then drop in Bird / WhatsApp / web-push behind the same interface.
 
 ## 6. Embeddings — CLIP optional, deterministic by default
 **What:** `embedImage(bytes)` returns a 512-d vector. Real CLIP (`@xenova/transformers`) is
