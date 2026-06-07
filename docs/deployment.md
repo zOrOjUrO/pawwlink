@@ -1,148 +1,122 @@
-# PawLink — Deployment & Validation (Next.js + Vercel)
+# PawLink — Deployment & Go-Live (Demo)
 
-How PawLink deploys, how to validate a deployment, and the decisions behind the
-setup with their justifications. Optimised for a 24‑hour hackathon: fast, low
-cost, reliable demo.
+Single Next.js 15 app on **Vercel**, backed by **Supabase** (Postgres + pgvector +
+Storage), with vision by **Mistral**. Built with **Dierenambulance Den Haag**
+(configurable) for three audiences: **shelter workers**, **pet parents**, and
+**adopters** — selectable via the in-app role switch.
 
-## 1. Architecture at a glance
+## 0. Accounts you need
+- **Supabase** project (free tier) — Postgres + pgvector + Storage.
+- **Mistral** API key — a vision-capable model (e.g. `pixtral-12b-2409`).
+- **Vercel** account linked to the GitHub repo.
 
-PawLink is now a single **Next.js 15 (App Router, TypeScript)** app on **Vercel**,
-backed by **Supabase**. There is no separate backend service.
+## 1. Database (Supabase SQL editor)
+Run `lib/db/schema.sql`. If your `animals` table predates it, also run this
+idempotent migration so every column the app writes exists:
+```sql
+alter table public.animals alter column breed_confidence type real using breed_confidence::real;
+alter table public.animals
+  add column if not exists primary_color text,
+  add column if not exists secondary_color text,
+  add column if not exists pattern text,
+  add column if not exists distinctive_markings text,
+  add column if not exists severity text,
+  add column if not exists severity_score int default 0,
+  add column if not exists observed_injuries jsonb default '[]'::jsonb,
+  add column if not exists urgent boolean default false,
+  add column if not exists triage_notes text,
+  add column if not exists status_note text,
+  add column if not exists raw_llm_response text,
+  add column if not exists capture_timestamp timestamptz,
+  add column if not exists found_location text,
+  add column if not exists owner_id uuid references public.owners(id),
+  add column if not exists passport jsonb;
 
-| Layer | Service | What runs there |
-|-------|---------|-----------------|
-| App + API | **Vercel** | Next.js pages + `app/api/*` route handlers (Node runtime) |
-| Data | **Supabase** | Postgres + pgvector (embeddings), Storage (photos) |
-| Vision | **Mistral Pixtral** | called directly from a route/server action — *mocked for now* |
-| Embeddings | **@xenova/transformers** | CLIP ViT‑B‑32 (ONNX) inside the Node route |
-| Notifications | **MockNotifier** | console log + fake success (for now) |
+-- lifecycle constraint (includes 'registered' for owner reference pets)
+alter table public.animals drop constraint if exists animals_status_check;
+alter table public.animals add constraint animals_status_check check (status in
+  ('searching','matched','in_care','ready_for_adoption','adopted','reunited','deceased','registered'));
 
+-- adopters table
+create table if not exists public.adopters (
+  id uuid primary key default gen_random_uuid(),
+  animal_id uuid references public.animals(id),
+  name text not null, phone text, email text,
+  status text default 'pending', created_at timestamptz default now()
+);
 ```
-Browser ──> Next.js (Vercel)
-                ├─ app/api/intake   → CLIP embed + (mock) Pixtral → Supabase insert
-                ├─ app/api/match/[id] → Supabase pgvector cosine + federated lookup
-                └─ app/api/notify   → MockNotifier
-                                       Supabase (Postgres + pgvector + Storage)
+Then create the vector-search RPC (cosine, registered pets only):
+```sql
+create or replace function public.match_animals(
+  query_embedding vector(512), match_threshold real default 0.75, match_count int default 5)
+returns table (id uuid, breed text, image_url text, owner_id uuid, similarity real)
+language sql stable as $$
+  select a.id, a.breed, a.image_url, a.owner_id, 1 - (a.embedding <=> query_embedding) as similarity
+  from public.animals a
+  where a.embedding is not null and a.owner_id is not null
+    and 1 - (a.embedding <=> query_embedding) >= match_threshold
+  order by a.embedding <=> query_embedding limit match_count;
+$$;
+```
+Finally ensure the storage bucket exists:
+```sql
+insert into storage.buckets (id, name, public) values ('animal-photos','animal-photos',true)
+on conflict (id) do nothing;
 ```
 
-## 2. Key decisions & justifications
+## 2. Environment variables (Vercel → Project → Settings → Environment Variables)
+| Var | Value | Notes |
+|-----|-------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` | public |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJ…` | public |
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ…` | **server only** |
+| `EMBEDDING_DIM` | `512` | matches `vector(512)` |
+| `MOCK_VISION` | `false` | `true` runs without Mistral |
+| `MISTRAL_API_KEY` | `…` | **server only** |
+| `MISTRAL_MODEL` | `pixtral-12b-2409` | any vision-capable Mistral model |
+| `USE_CLIP` | `false` | `true` = real CLIP embeddings (needs sharp) |
+| `NOTIFIER_PROVIDER` | `mock` | console SMS for the demo |
+| `NEXT_PUBLIC_APP_URL` | `https://pawlink.vercel.app` | used in notification links |
+| `NEXT_PUBLIC_ORG_NAME` | `Dierenambulance Den Haag` | shown on the intake hero |
+| `DEMO_MODE` | `true` | enables `/demo` reset in production |
 
-**One Next.js app instead of a separate FastAPI service.** Collapsing the API
-into `app/api/*` removes a whole deployment target (previously Railway), shares
-one TypeScript codebase and one set of env vars, and lets the frontend and API
-ship together on every Vercel push. Fewer moving parts = fewer demo failure
-modes.
+Mirror these in `.env.local` for local dev.
 
-**Node runtime for the API routes (not Edge).** `@xenova/transformers` runs ONNX
-+ wasm and needs Node APIs; the Supabase service client also assumes Node. Each
-route handler sets `export const runtime = "nodejs"`, and `next.config.ts` marks
-`@xenova/transformers` as a `serverExternalPackage` so it isn't bundled. Edge
-would be lower-latency but can't run the model.
+## 3. Deploy
+1. Import the repo in Vercel (framework auto-detected as Next.js).
+2. Add the env vars above. Set `NEXT_PUBLIC_APP_URL` to the assigned URL after the
+   first deploy, then redeploy.
+3. CI (`.github/workflows/ci.yml`) runs `tsc --noEmit` + `next build` on push.
 
-**Supabase for data.** One managed product gives Postgres **with pgvector** (our
-similarity search), **plus object storage** for photos, on a free tier, with a
-SQL editor to apply `lib/db/schema.sql`. Self-hosting Postgres + a blob store
-would cost hours we don't have.
+## 4. Seed demo data
+Two options:
+- **From the app:** open `/demo` → **Reset demo data** (requires `DEMO_MODE=true`).
+- **CLI:** `npm run seed` (wipes + inserts 3 owners + 4 found animals).
 
-**Mock vision + mock notifier by default.** Maaz's Python model isn't ready, so
-`VISION_PROVIDER=mock` returns a hardcoded passport while the real CLIP embedding
-is still computed from the photo — the matching pipeline is fully exercised.
-`NOTIFIER_PROVIDER=mock` keeps notifications visible (console + API response)
-with zero SMS cost or third-party flakiness during judging. Both swap to real
-providers via one env var.
+The seed includes the photogenic set: Sophie/Nootje (chip `528140000123456`),
+Jan/Grijs, Fatima/Max, plus four found animals demonstrating matched / searching /
+ready-for-adoption / urgent-in-care states.
 
-**Secrets stay server-side.** Only `NEXT_PUBLIC_*` values reach the browser
-(Supabase URL + anon key). The **service-role key**, `MISTRAL_API_KEY`, and any
-future notifier tokens live only in Vercel project env and are read inside Node
-route handlers.
+## 5. Validate (go/no-go)
+- `GET /api/health` → `{ status:"ok", mock_vision:false, supabase:"connected" }`.
+- Role switch (nav) toggles Shelter / Pet parent / Adopter and shows only that
+  role's screens.
+- **Shelter:** `/intake` → upload a photo → Mistral passport → `/passport/[id]`.
+  Chip `528140000123456` → green "reunited" match (Sophie). `/dashboard` shows the
+  queue + lifecycle actions.
+- **Pet parent:** `/owner/search` text search + chip lookup; `/owner/register`.
+- **Adopter:** `/adopt` shows the ready-for-adoption animal; "I want to adopt".
+- `tsc --noEmit` and `next build` both pass.
 
-## 3. Environment variables (Vercel project settings)
+## 6. Demo-day flow (recording)
+1. Open `/demo` → **Reset demo data** (clean slate).
+2. Role = **Shelter** → `/intake` → **Simulate intake** (or upload) → passport.
+3. Enter chip `528140000123456` on a fresh intake → reunited match + auto-notify.
+4. `/dashboard` → mark an animal "Ready for adoption".
+5. Switch role → **Adopter** → `/adopt` → "I want to adopt".
+6. Switch role → **Pet parent** → `/owner/search` → find a found animal.
 
-| Var | Example / value | Exposure | Notes |
-|-----|-----------------|----------|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxx.supabase.co` | public | |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` | public | client reads only |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` | **server** | privileged writes/storage |
-| `EMBEDDING_DIM` | `512` | server | must match `vector(512)` in schema |
-| `VISION_PROVIDER` | `mock` | server | `pixtral` to go live |
-| `MISTRAL_API_KEY` | — | **server** | only if `VISION_PROVIDER=pixtral` |
-| `NOTIFIER_PROVIDER` | `mock` | server | only mock today |
-| `SHELTER_NAME` | `PawLink Rescue Shelter` | server | SMS copy |
-| `CONFIRM_BASE_URL` | `https://pawlink.vercel.app` | server | owner confirm link base |
-
-> Set the same values in `.env.local` for local dev (gitignored).
-
-## 4. Deployment steps
-
-### 4.1 Supabase (data) — first
-1. Create a Supabase project; copy the project URL + anon + service-role keys.
-2. **SQL Editor** → run `lib/db/schema.sql`. This enables `pgvector`, creates
-   `owners` and `animals`, the IVFFlat index, the `match_animals` RPC, and the
-   `animal-photos` storage bucket.
-3. Seed demo data (3 owners + registered pets with precomputed embeddings):
-   call `seedDemoData()` from `lib/db/supabase.ts`. Easiest is a one-off
-   `app/api/seed/route.ts` (or a `tsx` script) that runs it once against the
-   Supabase env, then remove/guard it.
-
-### 4.2 Vercel (app + API)
-1. Import the repo. Framework preset: **Next.js** (auto-detected).
-2. Add the env vars from §3.
-3. Deploy. Note the URL (e.g. `https://pawlink.vercel.app`) and set it back into
-   `CONFIRM_BASE_URL`.
-
-### 4.3 CORS
-Not needed for same-origin calls — the browser and `app/api/*` share the Vercel
-origin. If a separate client ever calls the API cross-origin, add headers in the
-route handlers or `next.config.ts`.
-
-## 5. Validation
-
-### 5.1 API smoke test (after deploy)
-```bash
-APP=https://pawlink.vercel.app
-
-# Intake a photo -> capture animal_id
-curl -s -X POST $APP/api/intake -F "image=@demo.jpg" | tee /tmp/intake.json
-ID=$(node -e "console.log(require('/tmp/intake.json').animal_id)")
-
-# Match (federated chip + pgvector visual)
-curl -s $APP/api/match/$ID            # -> combined_status: matched|searching|no_match
-
-# Notify
-curl -s -X POST $APP/api/notify -H 'Content-Type: application/json' \
-  -d "{\"animal_id\":\"$ID\"}"        # -> channel: owner_sms|community_alert
-```
-(Until the route handlers are implemented they return **501** — that's expected
-during scaffolding.)
-
-### 5.2 Match-correctness check
-Insert an intake whose embedding matches a seeded registered pet; `match_animals`
-should return that pet's `owner_id` with `similarity ≥ ~0.75`. This confirms the
-model → embedding → pgvector → owner path end-to-end.
-
-### 5.3 Build gate
-```bash
-npm run build      # type-checks + compiles all routes; block deploy on failure
-```
-Recommended: a GitHub Action running `npm run build` on push.
-
-### 5.4 Go/no-go checklist
-- [ ] `lib/db/schema.sql` applied; `pgvector` enabled; bucket exists
-- [ ] `seedDemoData()` run; 3 owners + registered pets present
-- [ ] `npm run build` green
-- [ ] Intake → match returns a registered owner for the demo photo
-- [ ] `VISION_PROVIDER=mock`, `NOTIFIER_PROVIDER=mock` (no external cost in demo)
-- [ ] No secrets in the client bundle (only `NEXT_PUBLIC_*`)
-
-## 6. Rollback & resilience
-- **Bad deploy:** Vercel keeps every previous deployment — promote the last green
-  build from the dashboard.
-- **Provider/model outage:** `mock` providers remove third parties from the live
-  path entirely.
-- **DB issue:** matching/insert routes fail loudly; the mock vision path still
-  proves the UX, and Supabase point-in-time/restore covers data.
-
-## 7. Cost
-Vercel + Supabase free tiers cover the hackathon. Mock vision/notifier = zero
-per-call cost. Enabling Pixtral (per-request) or a real SMS provider (per-message)
-are the only paid components, both off by default.
+## Notes
+- `/demo` is unlinked (access by URL) and guarded by `DEMO_MODE`.
+- Notifications are console-only (`MockNotifier`); swap to Twilio/WhatsApp later.
+- External chip registries are mocked; only `528140000123456` resolves (Amivedi).

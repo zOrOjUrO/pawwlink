@@ -1,5 +1,4 @@
-// Deterministic embedding helpers (no native deps). Single source of truth —
-// previously duplicated in lib/db/supabase.ts and lib/vision/mock.ts.
+// Deterministic embedding helpers (no native deps).
 
 const DEFAULT_DIM = Number(process.env.EMBEDDING_DIM ?? 512);
 
@@ -17,7 +16,6 @@ function mulberry32(seedInt: number, dim: number): number[] {
   return v.map((x) => Number((x / norm).toFixed(6)));
 }
 
-/** Deterministic 512-d, L2-normalized vector from a string seed (xmur3 → mulberry32). */
 export function seededEmbedding(seed: string, dim = DEFAULT_DIM): number[] {
   let h = 1779033703 ^ seed.length;
   for (let i = 0; i < seed.length; i++) {
@@ -27,7 +25,6 @@ export function seededEmbedding(seed: string, dim = DEFAULT_DIM): number[] {
   return mulberry32(h, dim);
 }
 
-/** Deterministic 512-d, L2-normalized vector from raw image bytes (FNV-1a → mulberry32). */
 export function hashEmbedding(bytes: Uint8Array, dim = DEFAULT_DIM): number[] {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < bytes.length; i++) {

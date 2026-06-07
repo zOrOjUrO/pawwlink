@@ -3,7 +3,7 @@ export interface QueuedIntake {
   id: string;
   imageDataUrl: string;
   chipNumber?: string;
-  timestamp: string; // ISO
+  timestamp: string;
   status: "pending" | "synced" | "failed";
 }
 
@@ -22,7 +22,7 @@ function read(): QueuedIntake[] {
 function write(queue: QueuedIntake[]): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(queue));
-  window.dispatchEvent(new Event(EVENT)); // notify same-tab listeners (e.g. nav badge)
+  window.dispatchEvent(new Event(EVENT));
 }
 
 export function addToQueue(intake: QueuedIntake): void {

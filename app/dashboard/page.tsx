@@ -1,8 +1,7 @@
-// Shelter dashboard — initial server fetch (revalidate 30) + interactive client.
 import type { Metadata } from "next";
 import { listAnimals, type AnimalRecord } from "@/lib/db/supabase";
 import type { Passport } from "@/lib/types";
-import DashboardClient, { type Row } from "@/components/DashboardClient";
+import DashboardClient, { type Row, type Stats } from "@/components/DashboardClient";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Dashboard · PawLink", description: "Animal intake queue and full lifecycle management." };
@@ -30,5 +29,19 @@ export default async function DashboardPage() {
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load animals.";
   }
-  return <DashboardClient initialRows={rows} error={error} />;
+
+  const norm = (s: string) => (s === "intake" ? "searching" : s);
+  const now = new Date();
+  const stats: Stats = {
+    totalThisMonth: rows.filter((r) => {
+      if (!r.createdAt) return false;
+      const d = new Date(r.createdAt);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }).length,
+    searching: rows.filter((r) => norm(r.status) === "searching").length,
+    readyForAdoption: rows.filter((r) => r.status === "ready_for_adoption").length,
+    reunitedAdopted: rows.filter((r) => r.status === "reunited" || r.status === "adopted").length,
+  };
+
+  return <DashboardClient initialRows={rows} stats={stats} error={error} />;
 }

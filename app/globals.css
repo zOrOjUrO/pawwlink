@@ -1,17 +1,55 @@
 @import "tailwindcss";
 
-/* PawLink brand tokens (Tailwind v4 @theme) — see docs/brand-identity.md.
-   Frontend pages come later; tokens are scaffolded here so they're ready. */
+/* PawLink brand tokens (Tailwind v4 @theme) — see docs/brand-identity.md */
 @theme {
-  --color-rescue: #1b9c8f; /* Rescue Teal — primary */
-  --color-slate-brand: #1f2a37; /* Deep Slate — text/headers */
-  --color-amber-alert: #f4a340; /* Amber Alert — CTA / warnings */
-  --color-meadow: #3fb97a; /* success / healthy */
-  --color-signal: #e0533d; /* danger / critical */
-  --color-cloud: #f7f9fa; /* app background */
-  --color-mist: #d9e0e3; /* borders */
+  --color-rescue: #1b9c8f;       /* Rescue Teal — primary */
+  --color-slate-brand: #1f2a37;  /* Deep Slate — text/headers */
+  --color-amber-alert: #f4a340;  /* Amber Alert — CTA / warnings */
+  --color-meadow: #3fb97a;       /* success / healthy */
+  --color-signal: #e0533d;       /* danger / critical */
+  --color-cloud: #f7f9fa;        /* app background */
+  --color-mist: #d9e0e3;         /* borders */
 
-  --font-display: "Plus Jakarta Sans", Poppins, system-ui, sans-serif;
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", Poppins, system-ui, sans-serif;
+  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), "JetBrains Mono", "IBM Plex Mono", monospace;
+
+  --shadow-card: 0 1px 2px rgba(31, 42, 55, 0.04), 0 6px 20px rgba(31, 42, 55, 0.06);
 }
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-cloud);
+    color: var(--color-slate-brand);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* CSS-only animations used across pages */
+@keyframes radar-pulse {
+  0% { transform: scale(0.25); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.radar-ring { animation: radar-pulse 2s ease-out infinite; }
+
+@keyframes pop-in {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop-in 0.22s ease-out both; }
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-8px) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(28px) rotate(220deg); opacity: 0; }
+}
+.confetti { animation: confetti-fall 1.4s ease-in infinite; }

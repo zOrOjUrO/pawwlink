@@ -6,7 +6,6 @@ import { pendingCount, QUEUE_EVENT } from "@/lib/offlineQueue";
 
 export default function PendingBadge() {
   const [n, setN] = useState(0);
-
   useEffect(() => {
     const update = () => setN(pendingCount());
     update();
@@ -19,14 +18,9 @@ export default function PendingBadge() {
       clearInterval(t);
     };
   }, []);
-
   if (n === 0) return null;
   return (
-    <Link
-      href="/sync"
-      className="rounded-full bg-amber-alert text-white text-xs font-semibold px-2.5 py-1 hover:brightness-95"
-      title="Pending offline intakes"
-    >
+    <Link href="/sync" className="rounded-full bg-amber-alert text-white text-xs font-semibold px-2.5 py-1 hover:brightness-95" title="Pending offline intakes">
       {n} pending
     </Link>
   );

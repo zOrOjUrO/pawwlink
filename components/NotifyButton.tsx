@@ -22,24 +22,20 @@ export default function NotifyButton({ animalId, urgent }: { animalId: string; u
 
   if (state === "done") {
     return (
-      <button
-        disabled
-        className="w-full min-h-[56px] rounded-xl bg-meadow text-white font-display font-semibold text-lg"
-      >
+      <button disabled className="w-full min-h-[56px] rounded-full bg-meadow text-white font-display font-semibold text-lg animate-pop">
         Notified ✓
       </button>
     );
   }
 
   const color = urgent ? "bg-signal" : "bg-rescue";
-  const label =
-    state === "sending" ? "Notifying…" : state === "error" ? "Retry — notify owner" : "Notify owner";
+  const label = state === "sending" ? "Notifying…" : state === "error" ? "Retry — notify owner" : "Notify owner";
 
   return (
     <button
       onClick={notify}
       disabled={state === "sending"}
-      className={`w-full min-h-[56px] rounded-xl ${color} text-white font-display font-semibold text-lg hover:brightness-95 active:scale-[0.99] transition disabled:opacity-60`}
+      className={`w-full min-h-[56px] rounded-full ${color} text-white font-display font-semibold text-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60`}
     >
       {label}
     </button>

@@ -1,8 +1,4 @@
-// POST /api/owners/register
-// Body: { name, phone, email, pet: { species, breed, coat, imageBase64 } }
-// Generates a CLIP embedding from the photo (same path as intake), inserts the
-// owner with a registered_pets array, AND a `registered` animal row carrying the
-// embedding so the pet is discoverable by visual match. Returns { owner_id }.
+// POST /api/owners/register — register an owner + reference pet.
 import { NextResponse } from "next/server";
 import { embedImage } from "@/lib/matching/vector";
 import { getSupabase, insertOwner, insertAnimal } from "@/lib/db/supabase";
@@ -26,10 +22,7 @@ export async function POST(req: Request) {
     const { name, phone, email, pet } = body;
 
     if (!name || !pet?.imageBase64) {
-      return NextResponse.json(
-        { error: "name and pet.imageBase64 are required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "name and pet.imageBase64 are required." }, { status: 400 });
     }
 
     const raw = pet.imageBase64.replace(/^data:[^;]+;base64,/, "");
@@ -38,32 +31,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid pet image." }, { status: 400 });
     }
 
-    // CLIP embedding (or deterministic fallback) — same as intake.
     const embedding = await embedImage(bytes);
 
-    // Best-effort photo upload for display.
     let imageUrl: string | null = null;
     try {
       const sb = getSupabase();
       const key = `owner-${crypto.randomUUID()}.jpg`;
-      const { error: upErr } = await sb.storage
-        .from(BUCKET)
-        .upload(key, bytes, { contentType: "image/jpeg", upsert: true });
+      const { error: upErr } = await sb.storage.from(BUCKET).upload(key, bytes, { contentType: "image/jpeg", upsert: true });
       if (!upErr) imageUrl = sb.storage.from(BUCKET).getPublicUrl(key).data.publicUrl;
-    } catch {
-      /* storage optional */
-    }
+    } catch { /* storage optional */ }
 
-    const petMeta = {
-      species: pet.species ?? null,
-      breed: pet.breed ?? null,
-      coat: pet.coat ?? null,
-      image_url: imageUrl,
-    };
-
+    const petMeta = { species: pet.species ?? null, breed: pet.breed ?? null, coat: pet.coat ?? null, image_url: imageUrl };
     const ownerId = await insertOwner({ name, phone, email, registered_pets: [petMeta] });
 
-    // Registered animal row holds the embedding for pgvector matching.
     const passport: Passport = {
       species: pet.species ?? null,
       breed: pet.breed ?? null,

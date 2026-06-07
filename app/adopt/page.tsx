@@ -1,4 +1,3 @@
-// Public adoption board — animals ready for adoption.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listAnimalsByStatus, type AnimalRecord } from "@/lib/db/supabase";
@@ -44,43 +43,38 @@ export default async function AdoptPage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-meadow">Find your next companion</h1>
-          <p className="text-slate-brand/60 mt-1">These rescued animals are healthy, recovered, and ready for a loving home.</p>
-        </div>
-        <div className="flex gap-2 text-sm">
+    <main className="max-w-4xl mx-auto px-4 py-10">
+      <section className="text-center mb-8">
+        <span className="inline-block rounded-full bg-meadow/15 text-meadow text-xs font-semibold px-3 py-1 mb-3">Adoption</span>
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-meadow tracking-tight">Give a rescued animal a forever home</h1>
+        <p className="text-slate-brand/60 mt-3 max-w-lg mx-auto">Every animal here is healthy, recovered, and waiting to meet you.</p>
+        <div className="mt-5 flex justify-center gap-2 text-sm">
           <Link href="/owner/search" className="rounded-lg border border-mist bg-white px-3 py-2 text-slate-brand hover:bg-cloud">Lost a pet?</Link>
           <Link href="/intake" className="rounded-lg border border-mist bg-white px-3 py-2 text-slate-brand hover:bg-cloud">Work at a shelter?</Link>
         </div>
-      </div>
+      </section>
 
       {error && <div className="rounded-xl border border-signal/40 bg-signal/10 text-signal px-4 py-3 text-sm mb-4">{error}</div>}
 
       {cards.length === 0 && !error ? (
-        <div className="rounded-2xl border border-mist bg-white p-12 text-center text-slate-brand/50">
+        <div className="rounded-2xl border border-mist bg-white p-12 text-center text-slate-brand/50 shadow-sm">
           No animals ready for adoption right now — check back soon 🐾
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-5">
           {cards.map((c) => (
-            <div key={c.id} className="rounded-2xl border border-mist bg-white shadow-sm overflow-hidden">
+            <div key={c.id} className="rounded-2xl border border-mist bg-white shadow-sm overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
               <div className="aspect-square bg-cloud overflow-hidden">
                 {c.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={c.imageUrl} alt={c.breed} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-brand/30">no photo</div>
-                )}
+                ) : (<div className="w-full h-full flex items-center justify-center text-slate-brand/30">no photo</div>)}
               </div>
               <div className="p-4">
                 <h2 className="font-display font-bold text-lg text-slate-brand">{c.breed}</h2>
                 <p className="text-sm text-slate-brand/60 capitalize">{c.species}{c.coat ? ` · ${c.coat}` : ""}</p>
                 {c.notes && <p className="text-sm text-slate-brand/70 mt-2 line-clamp-3">{c.notes}</p>}
-                <Link href={`/passport/${c.id}`} className="mt-3 inline-block w-full text-center rounded-xl bg-rescue text-white font-display font-semibold py-2.5 hover:brightness-95">
-                  Meet {c.breed}
-                </Link>
+                <Link href={`/passport/${c.id}`} className="mt-3 inline-block w-full text-center rounded-xl border border-mist bg-white text-slate-brand font-display font-semibold py-2.5 hover:bg-cloud">Meet {c.breed}</Link>
                 <AdoptForm animalId={c.id} />
               </div>
             </div>

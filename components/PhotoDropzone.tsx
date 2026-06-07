@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 
 const ACCEPT = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-// Shared drag/drop photo picker (same UX as the rescue-worker intake form).
 export default function PhotoDropzone({ onFile }: { onFile: (f: File) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -32,18 +31,11 @@ export default function PhotoDropzone({ onFile }: { onFile: (f: File) => void })
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); pick(e.dataTransfer.files?.[0]); }}
-      className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 sm:p-10 text-center transition-colors min-h-[240px] flex flex-col items-center justify-center bg-white ${
+      className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 sm:p-10 text-center transition-all min-h-[240px] flex flex-col items-center justify-center bg-white ${
         dragging ? "border-rescue bg-rescue/5" : "border-mist hover:border-rescue/60"
       }`}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPT.join(",")}
-        capture="environment"
-        className="hidden"
-        onChange={(e) => pick(e.target.files?.[0])}
-      />
+      <input ref={inputRef} type="file" accept={ACCEPT.join(",")} capture="environment" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
       {preview ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -11,12 +11,9 @@ let _client: SupabaseClient | null = null;
 export function getSupabase(): SupabaseClient {
   if (_client) return _client;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
-    throw new Error(
-      "Supabase env not set (NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY)."
-    );
+    throw new Error("Supabase env not set (NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).");
   }
   _client = createClient(url, key, { auth: { persistSession: false } });
   return _client;
@@ -59,13 +56,9 @@ export type AnimalRecord = Record<string, unknown> & { id: string };
 function buildAnimalRow(input: InsertAnimalInput): Record<string, unknown> {
   const p = input.passport;
   const embedding = input.embedding ?? p.biometric?.embedding ?? [];
-
   if (embedding.length && embedding.length !== EMBEDDING_DIM) {
-    throw new Error(
-      `embedding dim mismatch: got ${embedding.length}, expected ${EMBEDDING_DIM}.`
-    );
+    throw new Error(`embedding dim mismatch: got ${embedding.length}, expected ${EMBEDDING_DIM}.`);
   }
-
   return {
     image_url: input.imageUrl ?? p.photo_meta?.image_url ?? null,
     species: p.species,
@@ -85,7 +78,7 @@ function buildAnimalRow(input: InsertAnimalInput): Record<string, unknown> {
     raw_llm_response: p.raw_llm_response ?? null,
     chip_number: input.chipNumber ?? null,
     owner_id: input.ownerId ?? null,
-    status: input.status ?? "intake",
+    status: input.status ?? "searching",
     capture_timestamp: p.photo_meta?.capture_timestamp ?? null,
   };
 }
@@ -95,7 +88,6 @@ function missingColumn(message: string): string | null {
   return m ? m[1] : null;
 }
 
-// e.g. invalid input syntax for type integer: "0.95"  /  numeric field overflow
 function badValue(message: string): string | null {
   const m = message.match(/invalid input syntax for type \w+: "([^"]*)"/);
   return m ? m[1] : null;
@@ -109,11 +101,6 @@ function keyForValue(row: Record<string, unknown>, value: string): string | null
   return null;
 }
 
-/**
- * Insert a row, auto-dropping any column the live table doesn't have. This keeps
- * the app resilient when the deployed schema is older than lib/db/schema.sql
- * (the full record is always preserved in the `passport` JSONB column).
- */
 async function insertWithRetry(table: string, row: Record<string, unknown>): Promise<string> {
   const sb = getSupabase();
   const working: Record<string, unknown> = { ...row };
@@ -144,16 +131,6 @@ export async function insertAnimal(input: InsertAnimalInput): Promise<string> {
   return insertWithRetry("animals", buildAnimalRow(input));
 }
 
-export async function getAnimalById(id: string): Promise<AnimalRecord | null> {
-  const { data, error } = await getSupabase()
-    .from("animals")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw new Error(`getAnimalById failed: ${error.message}`);
-  return (data as AnimalRecord) ?? null;
-}
-
 export async function updateAnimal(id: string, fields: Record<string, unknown>): Promise<void> {
   const sb = getSupabase();
   const working: Record<string, unknown> = { ...fields };
@@ -176,11 +153,27 @@ export async function updateAnimal(id: string, fields: Record<string, unknown>):
   throw new Error("update animal failed: too many unknown columns.");
 }
 
-export async function findSimilarAnimals(
-  embedding: number[],
-  threshold = 0.75,
-  count = 5
-): Promise<SimilarAnimal[]> {
+export async function getAnimalById(id: string): Promise<AnimalRecord | null> {
+  const { data, error } = await getSupabase().from("animals").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(`getAnimalById failed: ${error.message}`);
+  return (data as AnimalRecord) ?? null;
+}
+
+export async function listAnimals(limit = 50): Promise<AnimalRecord[]> {
+  const sb = getSupabase();
+  let res = await sb.from("animals").select("*").order("created_at", { ascending: false }).limit(limit);
+  if (res.error) res = await sb.from("animals").select("*").limit(limit);
+  if (res.error) throw new Error(`listAnimals failed: ${res.error.message}`);
+  return (res.data as AnimalRecord[]) ?? [];
+}
+
+export async function listAnimalsByStatus(status: string, limit = 100): Promise<AnimalRecord[]> {
+  const { data, error } = await getSupabase().from("animals").select("*").eq("status", status).limit(limit);
+  if (error) throw new Error(`listAnimalsByStatus failed: ${error.message}`);
+  return (data as AnimalRecord[]) ?? [];
+}
+
+export async function findSimilarAnimals(embedding: number[], threshold = 0.75, count = 5): Promise<SimilarAnimal[]> {
   if (!embedding.length) return [];
   const { data, error } = await getSupabase().rpc("match_animals", {
     query_embedding: toPgVector(embedding),
@@ -191,17 +184,6 @@ export async function findSimilarAnimals(
   return (data as SimilarAnimal[]) ?? [];
 }
 
-export async function listAnimals(limit = 50): Promise<AnimalRecord[]> {
-  const sb = getSupabase();
-  let res = await sb.from("animals").select("*").order("created_at", { ascending: false }).limit(limit);
-  if (res.error) {
-    // Older schema may lack created_at — fall back to an unordered select.
-    res = await sb.from("animals").select("*").limit(limit);
-  }
-  if (res.error) throw new Error(`listAnimals failed: ${res.error.message}`);
-  return (res.data as AnimalRecord[]) ?? [];
-}
-
 export async function insertOwner(input: InsertOwnerInput): Promise<string> {
   return insertWithRetry("owners", {
     name: input.name,
@@ -209,12 +191,6 @@ export async function insertOwner(input: InsertOwnerInput): Promise<string> {
     email: input.email ?? null,
     registered_pets: input.registered_pets ?? [],
   });
-}
-
-export async function listAnimalsByStatus(status: string, limit = 100): Promise<AnimalRecord[]> {
-  const { data, error } = await getSupabase().from("animals").select("*").eq("status", status).limit(limit);
-  if (error) throw new Error(`listAnimalsByStatus failed: ${error.message}`);
-  return (data as AnimalRecord[]) ?? [];
 }
 
 export interface InsertAdopterInput {
@@ -253,12 +229,7 @@ export async function seedDemoData(): Promise<SeedResult> {
   const owners: SeedResult["owners"] = [];
   const pets: SeedResult["pets"] = [];
   for (const owner of DEMO_OWNERS) {
-    const ownerId = await insertOwner({
-      name: owner.name,
-      phone: owner.phone,
-      email: owner.email,
-      registered_pets: owner.pets,
-    });
+    const ownerId = await insertOwner({ name: owner.name, phone: owner.phone, email: owner.email, registered_pets: owner.pets });
     owners.push({ id: ownerId, name: owner.name });
     for (const pet of owner.pets) {
       const embedding = mockEmbedding(`${owner.name}:${pet.name}`);

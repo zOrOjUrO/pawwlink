@@ -1,10 +1,4 @@
 // Image embedding for pgvector similarity.
-//
-// By default we use a fast, dependency-free deterministic embedding (no native
-// modules), which keeps `next dev` working everywhere. Real CLIP via
-// @xenova/transformers is opt-in (USE_CLIP=true) and requires `sharp`; if it is
-// enabled but unavailable, we transparently fall back instead of crashing.
-
 export const EMBEDDING_DIM = Number(process.env.EMBEDDING_DIM ?? 512);
 export const HIGH_CONFIDENCE = 0.85;
 export const MATCH_THRESHOLD = 0.75;
@@ -28,11 +22,6 @@ async function getExtractor(): Promise<FeatureExtractor> {
   return _extractor;
 }
 
-/**
- * Returns a 512-dim embedding for the image. Uses CLIP ViT-B-32 when USE_CLIP
- * is enabled and available, otherwise the deterministic hash fallback. Never
- * throws — embedding failures degrade gracefully so intake always succeeds.
- */
 export async function embedImage(bytes: Uint8Array): Promise<number[]> {
   if (USE_CLIP) {
     try {
@@ -44,9 +33,7 @@ export async function embedImage(bytes: Uint8Array): Promise<number[]> {
       if (vec.length === EMBEDDING_DIM) return vec;
       console.warn(`CLIP returned ${vec.length} dims (expected ${EMBEDDING_DIM}); using fallback.`);
     } catch (err) {
-      console.warn(
-        `CLIP embedding unavailable (${err instanceof Error ? err.message : err}); using deterministic fallback.`
-      );
+      console.warn(`CLIP embedding unavailable (${err instanceof Error ? err.message : err}); using deterministic fallback.`);
     }
   }
   return hashEmbedding(bytes);

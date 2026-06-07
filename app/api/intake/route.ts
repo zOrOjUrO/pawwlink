@@ -31,9 +31,7 @@ export async function POST(req: Request) {
     const ext = (image.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
     const key = `${crypto.randomUUID()}.${ext}`;
     const supabase = getSupabase();
-    const { error: upErr } = await supabase.storage
-      .from(BUCKET)
-      .upload(key, bytes, { contentType: image.type, upsert: true });
+    const { error: upErr } = await supabase.storage.from(BUCKET).upload(key, bytes, { contentType: image.type, upsert: true });
     if (upErr) throw new Error(`storage upload failed: ${upErr.message}`);
     const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(key);
     const imageUrl = pub.publicUrl;
