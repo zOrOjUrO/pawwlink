@@ -67,7 +67,7 @@ async function main() {
     raw_llm_response: "[seed] found animal (close to Loki)",
   };
 
-  const foundId = await insertAnimal({ passport, embedding: foundEmbedding, status: "intake" });
+  const foundId = await insertAnimal({ passport, embedding: foundEmbedding, status: "searching" });
   console.log(`\nFound animal inserted: ${foundId}`);
   console.log(`  -> matches registered pet "${pet2.name}" (owner ${owner2.name})`);
   console.log("\nDone. Open /api/health, then GET /api/match/" + foundId);

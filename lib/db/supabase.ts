@@ -1,6 +1,8 @@
 // Supabase client + animal/owner data helpers.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Passport, Severity } from "@/lib/types";
+import type { AnimalStatus } from "@/lib/constants";
+import { seededEmbedding } from "@/lib/embedding";
 
 export const EMBEDDING_DIM = Number(process.env.EMBEDDING_DIM ?? 512);
 
@@ -24,13 +26,7 @@ export function toPgVector(embedding: number[]): string {
   return `[${embedding.join(",")}]`;
 }
 
-export type AnimalStatus =
-  | "registered"
-  | "intake"
-  | "matching"
-  | "matched"
-  | "notified"
-  | "closed";
+export type { AnimalStatus };
 
 export interface InsertAnimalInput {
   passport: Passport;
@@ -158,6 +154,28 @@ export async function getAnimalById(id: string): Promise<AnimalRecord | null> {
   return (data as AnimalRecord) ?? null;
 }
 
+export async function updateAnimal(id: string, fields: Record<string, unknown>): Promise<void> {
+  const sb = getSupabase();
+  const working: Record<string, unknown> = { ...fields };
+  for (let i = 0; i < 12; i++) {
+    const { error } = await sb.from("animals").update(working).eq("id", id);
+    if (!error) return;
+    const col = missingColumn(error.message);
+    if (col && col in working) {
+      delete working[col];
+      console.warn(`[pawlink] 'animals' has no '${col}' column — dropping it and retrying.`);
+      continue;
+    }
+    const bad = badValue(error.message);
+    if (bad !== null) {
+      const k = keyForValue(working, bad);
+      if (k) { delete working[k]; continue; }
+    }
+    throw new Error(`update animal failed: ${error.message}`);
+  }
+  throw new Error("update animal failed: too many unknown columns.");
+}
+
 export async function findSimilarAnimals(
   embedding: number[],
   threshold = 0.75,
@@ -193,23 +211,31 @@ export async function insertOwner(input: InsertOwnerInput): Promise<string> {
   });
 }
 
+export async function listAnimalsByStatus(status: string, limit = 100): Promise<AnimalRecord[]> {
+  const { data, error } = await getSupabase().from("animals").select("*").eq("status", status).limit(limit);
+  if (error) throw new Error(`listAnimalsByStatus failed: ${error.message}`);
+  return (data as AnimalRecord[]) ?? [];
+}
+
+export interface InsertAdopterInput {
+  animal_id: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export async function insertAdopter(input: InsertAdopterInput): Promise<string> {
+  return insertWithRetry("adopters", {
+    animal_id: input.animal_id,
+    name: input.name,
+    phone: input.phone ?? null,
+    email: input.email ?? null,
+    status: "pending",
+  });
+}
+
 export function mockEmbedding(seed: string, dim = EMBEDDING_DIM): number[] {
-  let h = 1779033703 ^ seed.length;
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  let a = h >>> 0;
-  const rand = () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  const v = Array.from({ length: dim }, () => rand() * 2 - 1);
-  const norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1;
-  return v.map((x) => Number((x / norm).toFixed(6)));
+  return seededEmbedding(seed, dim);
 }
 
 export const DEMO_OWNERS = [

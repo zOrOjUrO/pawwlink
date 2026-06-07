@@ -1,13 +1,17 @@
 // Digital Passport page — server component.
+import type { Metadata } from "next";
 // Reads the animal row via server-only Supabase helpers and fetches the match
 // result from GET /api/match/[id] (which also triggers the owner notification).
 
 import Link from "next/link";
+import NotifyButton from "@/components/NotifyButton";
+import { relativeTime } from "@/lib/format";
 import { headers } from "next/headers";
 import { getAnimalById } from "@/lib/db/supabase";
 import type { Passport } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const metadata: Metadata = { title: "Digital Passport · PawLink", description: "AI-generated animal passport, triage, and owner match." };
 export const dynamic = "force-dynamic";
 
 interface MatchResponse {
@@ -31,20 +35,6 @@ async function getMatch(id: string): Promise<MatchResponse | null> {
   } catch {
     return null;
   }
-}
-
-function relativeTime(iso: string | null): string {
-  if (!iso) return "just now";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "just now";
-  const diff = Math.max(0, Date.now() - then);
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
-  const hr = Math.floor(m / 60);
-  if (hr < 24) return `${hr} hour${hr === 1 ? "" : "s"} ago`;
-  const d = Math.floor(hr / 24);
-  return `${d} day${d === 1 ? "" : "s"} ago`;
 }
 
 const COLOR_HEX: Record<string, string> = {
@@ -170,7 +160,7 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
           <div className="bg-white rounded-2xl border border-mist shadow-sm p-5">
             <div className="flex items-center justify-between">
               <h3 className="font-display font-semibold text-slate-brand">Triage</h3>
-              <span className={`rounded-full px-3 py-1 text-sm font-semibold ${sev.cls} ${sev.pulse ? "animate-pulse" : ""}`}>
+              <span className={`inline-flex items-center min-h-[48px] rounded-full px-5 text-base font-semibold ${sev.cls} ${sev.pulse ? "animate-pulse" : ""}`}>
                 {sev.label}
               </span>
             </div>
@@ -241,8 +231,13 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
         )}
       </section>
 
+      {/* ONE-TAP NOTIFY */}
+      <div className="mt-6">
+        <NotifyButton animalId={id} urgent={urgent} />
+      </div>
+
       {/* BOTTOM ACTIONS */}
-      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+      <div className="mt-4 flex flex-col sm:flex-row gap-3">
         <Link href="/intake" className="flex-1 text-center rounded-xl bg-rescue text-white font-display font-semibold py-3.5 hover:brightness-95 transition">
           New Intake
         </Link>
