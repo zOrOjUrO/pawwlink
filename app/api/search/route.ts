@@ -48,6 +48,8 @@ export async function GET(req: Request) {
       breed: p.breed ?? (a.breed as string | null) ?? null,
       primary_color: p.coat?.primary_color ?? (a.primary_color as string | null) ?? null,
       image_url: (a.image_url as string | null) ?? p.photo_meta?.image_url ?? null,
+      location: (a.found_location as string | null) ?? null,
+      created_at: (a.created_at as string | null) ?? null,
       match_score: score,
       status: "searching" as const,
     }));

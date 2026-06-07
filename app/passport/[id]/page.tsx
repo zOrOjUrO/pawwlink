@@ -3,6 +3,7 @@
 // result from GET /api/match/[id] (which also triggers the owner notification).
 
 import Link from "next/link";
+import NotifyButton from "@/components/NotifyButton";
 import { headers } from "next/headers";
 import { getAnimalById } from "@/lib/db/supabase";
 import type { Passport } from "@/lib/types";
@@ -170,7 +171,7 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
           <div className="bg-white rounded-2xl border border-mist shadow-sm p-5">
             <div className="flex items-center justify-between">
               <h3 className="font-display font-semibold text-slate-brand">Triage</h3>
-              <span className={`rounded-full px-3 py-1 text-sm font-semibold ${sev.cls} ${sev.pulse ? "animate-pulse" : ""}`}>
+              <span className={`inline-flex items-center min-h-[48px] rounded-full px-5 text-base font-semibold ${sev.cls} ${sev.pulse ? "animate-pulse" : ""}`}>
                 {sev.label}
               </span>
             </div>
@@ -241,8 +242,13 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
         )}
       </section>
 
+      {/* ONE-TAP NOTIFY */}
+      <div className="mt-6">
+        <NotifyButton animalId={id} urgent={urgent} />
+      </div>
+
       {/* BOTTOM ACTIONS */}
-      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+      <div className="mt-4 flex flex-col sm:flex-row gap-3">
         <Link href="/intake" className="flex-1 text-center rounded-xl bg-rescue text-white font-display font-semibold py-3.5 hover:brightness-95 transition">
           New Intake
         </Link>

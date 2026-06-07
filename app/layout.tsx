@@ -1,10 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import PendingBadge from "@/components/PendingBadge";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PawLink — Every paw, back home.",
   description: "AI-powered animal rescue intake platform.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "PawLink" },
+  other: { "mobile-web-app-capable": "yes" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1B9C8F",
 };
 
 function PawMark({ className = "h-7 w-7" }: { className?: string }) {
@@ -35,11 +43,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span className="font-display font-bold text-lg text-rescue">PawLink</span>
           </Link>
           <div className="flex items-center gap-1 text-sm font-medium">
+            <PendingBadge />
             <Link href="/intake" className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">
               New Intake
             </Link>
             <Link href="/dashboard" className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">
               Dashboard
+            </Link>
+            <Link href="/owner/search" className="px-3 py-2 rounded-lg text-sm text-white/80 hover:bg-white/10 transition-colors">
+              Lost a pet?
             </Link>
           </div>
         </nav>

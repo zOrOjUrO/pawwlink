@@ -1,5 +1,6 @@
 // Shelter dashboard — queue of intake animals.
 import Link from "next/link";
+import RefreshButton from "@/components/RefreshButton";
 import { listAnimals, type AnimalRecord } from "@/lib/db/supabase";
 import type { Passport } from "@/lib/types";
 
@@ -80,9 +81,12 @@ export default async function DashboardPage() {
             {urgentCount > 0 && <span className="text-signal font-medium"> · {urgentCount} urgent</span>}
           </p>
         </div>
-        <Link href="/intake" className="shrink-0 rounded-xl bg-rescue text-white font-display font-semibold px-4 py-2.5 hover:brightness-95 transition">
-          + New Intake
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <RefreshButton />
+          <Link href="/intake" className="rounded-xl bg-rescue text-white font-display font-semibold px-4 py-2.5 hover:brightness-95 transition">
+            + New Intake
+          </Link>
+        </div>
       </div>
 
       {error && (

@@ -1,9 +1,19 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { addToQueue, markSynced, markFailed } from "@/lib/offlineQueue";
 
 const ACCEPT = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
 
 export default function IntakePage() {
   const router = useRouter();
@@ -15,6 +25,13 @@ export default function IntakePage() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const pickFile = useCallback((f: File | undefined | null) => {
     if (!f) return;
@@ -30,8 +47,21 @@ export default function IntakePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file || loading) return;
-    setLoading(true);
     setError(null);
+
+    // 1. Save to the offline queue FIRST (instant) — never lose an intake.
+    const id = crypto.randomUUID();
+    const imageDataUrl = await fileToDataUrl(file);
+    addToQueue({
+      id,
+      imageDataUrl,
+      chipNumber: chip.trim() || undefined,
+      timestamp: new Date().toISOString(),
+      status: "pending",
+    });
+
+    // 2. Then attempt to sync now.
+    setLoading(true);
     try {
       const form = new FormData();
       form.append("image", file);
@@ -40,19 +70,27 @@ export default function IntakePage() {
       const res = await fetch("/api/intake", { method: "POST", body: form });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        markFailed(id);
         throw new Error(body.error || `Intake failed (${res.status}).`);
       }
       const data = await res.json();
+      markSynced(id);
       router.push(`/passport/${data.animal_id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setLoading(false);
+      // Network error → it stays queued; server error → marked failed above.
+      const offline = typeof navigator !== "undefined" && !navigator.onLine;
+      if (offline || (err instanceof TypeError)) {
+        setToast("Saved offline — will sync when connected");
+      } else {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      }
     }
   }
 
   return (
     <main className="min-h-screen flex flex-col bg-cloud">
-      {/* Loading overlay */}
+      {/* Loading overlay (analysis) */}
       {loading && (
         <div className="fixed inset-0 z-50 bg-slate-brand/70 backdrop-blur-sm flex flex-col items-center justify-center px-6 text-center">
           <div className="h-14 w-14 rounded-full border-4 border-white/30 border-t-amber-alert animate-spin" />
@@ -61,8 +99,14 @@ export default function IntakePage() {
         </div>
       )}
 
-      {/* Form */}
-      <div className="flex-1 flex items-start sm:items-center justify-center px-4 pb-10">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-slate-brand text-white px-4 py-3 text-sm shadow-lg">
+          {toast} · <a href="/sync" className="underline">View queue</a>
+        </div>
+      )}
+
+      <div className="flex-1 flex items-start sm:items-center justify-center px-4 pt-6 pb-10">
         <form onSubmit={handleSubmit} className="w-full max-w-xl">
           <div className="mb-5">
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-brand">New animal intake</h1>
@@ -71,7 +115,6 @@ export default function IntakePage() {
             </p>
           </div>
 
-          {/* Drag & drop zone */}
           <div
             role="button"
             tabIndex={0}
@@ -80,7 +123,7 @@ export default function IntakePage() {
             onDragOver={(e) => { e.preventDefault(); if (!loading) setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={(e) => { e.preventDefault(); setDragging(false); if (!loading) pickFile(e.dataTransfer.files?.[0]); }}
-            className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors min-h-[280px] flex flex-col items-center justify-center bg-white ${
+            className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-colors min-h-[260px] flex flex-col items-center justify-center bg-white ${
               dragging ? "border-rescue bg-rescue/5" : "border-mist hover:border-rescue/60"
             }`}
           >
@@ -96,9 +139,7 @@ export default function IntakePage() {
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={preview} alt="Selected animal" className="max-h-56 rounded-xl object-contain shadow-sm" />
-                <p className="mt-4 text-sm text-slate-brand/60">
-                  {file?.name} · <span className="text-rescue font-medium">Tap to change</span>
-                </p>
+                <p className="mt-4 text-sm text-slate-brand/60">Tap to change</p>
               </>
             ) : (
               <>
@@ -115,7 +156,6 @@ export default function IntakePage() {
             )}
           </div>
 
-          {/* Chip number */}
           <div className="mt-5">
             <label htmlFor="chip" className="block text-sm font-medium text-slate-brand mb-1.5">
               Microchip number <span className="text-slate-brand/40 font-normal">(optional)</span>
@@ -136,7 +176,6 @@ export default function IntakePage() {
             </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={!file || loading}
@@ -146,7 +185,7 @@ export default function IntakePage() {
           </button>
 
           <p className="mt-4 text-center text-xs text-slate-brand/40">
-            Powered by Pixtral AI · PawLink · HackDelft 2026
+            Powered by Pixtral AI · works offline · PawLink
           </p>
         </form>
       </div>
