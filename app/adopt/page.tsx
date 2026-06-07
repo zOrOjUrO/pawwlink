@@ -1,4 +1,5 @@
 // Public adoption board — animals ready for adoption.
+import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listAnimalsByStatus, type AnimalRecord } from "@/lib/db/supabase";
@@ -66,10 +67,9 @@ export default async function AdoptPage() {
         <div className="grid sm:grid-cols-2 gap-5">
           {cards.map((c) => (
             <div key={c.id} className="rounded-2xl border border-mist bg-white shadow-sm overflow-hidden">
-              <div className="aspect-square bg-cloud overflow-hidden">
+              <div className="relative aspect-square bg-cloud overflow-hidden">
                 {c.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.imageUrl} alt={c.breed} className="w-full h-full object-cover" />
+                  <Image src={c.imageUrl} alt={c.breed} fill priority sizes="(max-width: 640px) 100vw, 360px" className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-brand/30">no photo</div>
                 )}

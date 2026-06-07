@@ -110,6 +110,7 @@ export default function IntakePage() {
           <div
             role="button"
             tabIndex={0}
+            aria-label="Upload or take a photo of the animal"
             onClick={() => !loading && inputRef.current?.click()}
             onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && inputRef.current?.click()}
             onDragOver={(e) => { e.preventDefault(); if (!loading) setDragging(true); }}

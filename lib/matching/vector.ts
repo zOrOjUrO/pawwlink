@@ -9,7 +9,8 @@ export const EMBEDDING_DIM = Number(process.env.EMBEDDING_DIM ?? 512);
 export const HIGH_CONFIDENCE = 0.85;
 export const MATCH_THRESHOLD = 0.75;
 
-const USE_CLIP = (process.env.USE_CLIP ?? "false").toLowerCase() === "true";
+// CLIP cannot run on Vercel serverless (no onnxruntime native lib) -> stays off there.
+const USE_CLIP = (process.env.USE_CLIP ?? "false").toLowerCase() === "true" && !process.env.VERCEL;
 
 import { hashEmbedding } from "@/lib/embedding";
 export { hashEmbedding };
