@@ -24,7 +24,7 @@ export function mockAnalyze(imagePath: string): PassportResult {
         "Alert and responsive. Mild limp on front left leg, likely a soft-tissue injury. Dehydration possible. Recommend vet examination within 2-3 hours.",
     },
     biometric: {
-      embedding: seededEmbedding(imagePath || "mock"),
+      embedding: seededEmbedding(imagePath || "mock", EMBEDDING_DIM),
       embedding_model: "clip-ViT-B-32",
       embedding_dim: EMBEDDING_DIM,
     },

@@ -1,13 +1,9 @@
-// PATCH /api/animals/[id]/status
-// Body: { status: AnimalStatus, note?, owner_id?, adopter_id? }
-// Updates animals.status (self-healing). No auth (hackathon scope).
+// PATCH /api/animals/[id]/status — update lifecycle status (self-healing).
 import { NextResponse } from "next/server";
 import { updateAnimal } from "@/lib/db/supabase";
 import { LIFECYCLE_STATUSES, type AnimalStatus } from "@/lib/constants";
 
 export const runtime = "nodejs";
-
-
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -20,14 +16,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     };
     const status = body.status as AnimalStatus;
     if (!status || !(LIFECYCLE_STATUSES as readonly string[]).includes(status)) {
-      return NextResponse.json(
-        { error: `status must be one of: ${LIFECYCLE_STATUSES.join(", ")}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `status must be one of: ${LIFECYCLE_STATUSES.join(", ")}` }, { status: 400 });
     }
 
     const fields: Record<string, unknown> = { status };
-    if (body.note) fields.status_note = body.note; // dropped automatically if column absent
+    if (body.note) fields.status_note = body.note;
     if (status === "reunited" && body.owner_id) fields.owner_id = body.owner_id;
     if (status === "adopted" && body.adopter_id) fields.adopter_id = body.adopter_id;
 

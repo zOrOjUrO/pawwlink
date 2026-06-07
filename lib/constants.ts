@@ -8,11 +8,10 @@ export const ANIMAL_STATUSES = [
   "adopted",
   "reunited",
   "deceased",
-  "registered", // owner reference pets — not part of the found-animal lifecycle
+  "registered",
 ] as const;
 export type AnimalStatus = (typeof ANIMAL_STATUSES)[number];
 
-/** The seven lifecycle states a found animal can move through (excludes 'registered'). */
 export const LIFECYCLE_STATUSES = [
   "searching",
   "matched",

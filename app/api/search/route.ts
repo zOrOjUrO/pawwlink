@@ -1,7 +1,4 @@
-// GET /api/search?q=golden+retriever+female+amsterdam
-// Text search over found animals (breed, species, coat, markings, location, notes).
-// Read-only; returns candidates in "searching" status for owners browsing without
-// registering. Token-scored in JS so it tolerates schema drift (reads passport JSONB).
+// GET /api/search?q=... — token search over found animals. Read-only.
 import { NextResponse } from "next/server";
 import { listAnimals } from "@/lib/db/supabase";
 import type { Passport } from "@/lib/types";
@@ -13,7 +10,6 @@ export async function GET(req: Request) {
   if (!q) {
     return NextResponse.json({ query: "", count: 0, results: [], status: "searching" });
   }
-
   const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
 
   let animals;
@@ -25,7 +21,7 @@ export async function GET(req: Request) {
   }
 
   const results = animals
-    .filter((a) => ((a.status as string | null) ?? "intake") !== "registered")
+    .filter((a) => ((a.status as string | null) ?? "searching") !== "registered")
     .map((a) => {
       const rec = a as Record<string, unknown>;
       const p = (rec.passport ?? {}) as Passport;

@@ -31,7 +31,6 @@ export async function POST(req: Request) {
     let channel: string;
     let message: string;
     let recipient: string;
-
     if (matchType === "owner") {
       channel = "owner_sms";
       recipient = "registered owner";
