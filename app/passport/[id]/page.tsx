@@ -1,4 +1,5 @@
 // Digital Passport page — server component.
+import Image from "next/image";
 import type { Metadata } from "next";
 // Reads the animal row via server-only Supabase helpers and fetches the match
 // result from GET /api/match/[id] (which also triggers the owner notification).
@@ -108,10 +109,9 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
       <div className="grid lg:grid-cols-2 gap-6">
         {/* LEFT — animal card */}
         <section className="bg-white rounded-2xl border border-mist shadow-sm overflow-hidden">
-          <div className="bg-cloud aspect-[4/3] flex items-center justify-center overflow-hidden">
+          <div className="relative bg-cloud aspect-[4/3] flex items-center justify-center overflow-hidden">
             {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt={`${species} ${breed}`} className="w-full h-full object-cover" />
+              <Image src={imageUrl} alt={`${species} ${breed}`} fill priority sizes="(max-width: 1024px) 100vw, 512px" className="object-cover" />
             ) : (
               <span className="text-slate-brand/30">No photo</span>
             )}

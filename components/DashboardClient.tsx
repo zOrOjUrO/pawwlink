@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -100,6 +101,21 @@ export default function DashboardClient({ initialRows, error }: { initialRows: R
     }
   }
 
+  async function deleteAnimal(id: string) {
+    if (!confirm("Delete this animal entry permanently? This cannot be undone.")) return;
+    const prev = rows;
+    setRows((rs) => rs.filter((r) => r.id !== id)); // optimistic
+    try {
+      const res = await fetch(`/api/animals/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setToast("Animal entry deleted");
+      router.refresh();
+    } catch {
+      setRows(prev); // revert
+      setToast("Could not delete — try again");
+    }
+  }
+
   const filtered = rows.filter((r) => {
     const s = norm(r.status);
     if (tab === "all") return true;
@@ -152,10 +168,9 @@ export default function DashboardClient({ initialRows, error }: { initialRows: R
             return (
               <div key={r.id} className="flex items-center gap-3 sm:gap-4 rounded-2xl border border-mist bg-white p-3 sm:p-4 shadow-sm">
                 <Link href={`/passport/${r.id}`} className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="h-14 w-14 shrink-0 rounded-xl bg-cloud overflow-hidden flex items-center justify-center">
+                  <div className="relative h-14 w-14 shrink-0 rounded-xl bg-cloud overflow-hidden flex items-center justify-center">
                     {r.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.imageUrl} alt={r.breed} className="h-full w-full object-cover" />
+                      <Image src={r.imageUrl} alt={r.breed} fill loading="lazy" sizes="56px" className="object-cover" />
                     ) : (
                       <span className="text-[10px] text-slate-brand/30">no photo</span>
                     )}
@@ -184,6 +199,15 @@ export default function DashboardClient({ initialRows, error }: { initialRows: R
                 )}
 
                 <span className="hidden sm:inline text-xs text-slate-brand/40 w-14 text-right shrink-0">{relativeTime(r.createdAt, { short: true })}</span>
+
+                <button
+                  onClick={() => deleteAnimal(r.id)}
+                  aria-label={`Delete ${r.breed} entry`}
+                  title="Delete entry"
+                  className="shrink-0 rounded-lg border border-mist bg-white text-signal px-2 py-1.5 text-sm hover:bg-signal/10 focus:outline-none focus:ring-2 focus:ring-signal/40"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
               </div>
             );
           })}

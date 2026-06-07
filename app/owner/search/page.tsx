@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -84,7 +85,7 @@ export default function OwnerSearchPage() {
 
       {/* Text search */}
       <form onSubmit={runSearch} className="flex gap-2 mb-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. golden retriever amsterdam" className={inputCls} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search found animals" placeholder="e.g. golden retriever amsterdam" className={inputCls} />
         <button type="submit" disabled={searching} className="shrink-0 rounded-xl bg-rescue text-white font-display font-semibold px-5 hover:brightness-95 disabled:opacity-50">
           {searching ? "…" : "Search"}
         </button>
@@ -98,10 +99,9 @@ export default function OwnerSearchPage() {
         <div className="grid sm:grid-cols-2 gap-3 mb-8">
           {results.map((r) => (
             <Link key={r.animal_id} href={`/passport/${r.animal_id}`} className="rounded-2xl border border-mist bg-white shadow-sm overflow-hidden hover:border-rescue/50 transition">
-              <div className="aspect-[4/3] bg-cloud overflow-hidden">
+              <div className="relative aspect-[4/3] bg-cloud overflow-hidden">
                 {r.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.image_url} alt={r.breed ?? "animal"} className="w-full h-full object-cover" />
+                  <Image src={r.image_url} alt={r.breed ?? "animal"} fill loading="lazy" sizes="(max-width: 640px) 100vw, 320px" className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-brand/30 text-sm">no photo</div>
                 )}
@@ -123,7 +123,7 @@ export default function OwnerSearchPage() {
         <h2 className="font-display font-semibold text-slate-brand mb-1">Microchip lookup</h2>
         <p className="text-sm text-slate-brand/60 mb-3">Know the chip number? Check the registries directly.</p>
         <form onSubmit={runLookup} className="flex gap-2">
-          <input value={chip} onChange={(e) => setChip(e.target.value)} inputMode="numeric" placeholder="e.g. 528140000123456" className={inputCls + " font-mono"} />
+          <input value={chip} onChange={(e) => setChip(e.target.value)} inputMode="numeric" aria-label="Microchip number" placeholder="e.g. 528140000123456" className={inputCls + " font-mono"} />
           <button type="submit" disabled={looking} className="shrink-0 rounded-xl bg-slate-brand text-white font-display font-semibold px-5 hover:brightness-110 disabled:opacity-50">
             {looking ? "…" : "Look up"}
           </button>
