@@ -1,4 +1,4 @@
-# 🐾 PawLink
+# PawLink
 
 **Every paw, back home.** — AI-powered animal rescue intake & owner-reunification platform.
 
@@ -58,9 +58,9 @@ PawLink collapses intake → identification → reunification into seconds, and 
 | Federation — Amivedi / NDG / PetBase | 🟡 **Mocked** | 3 registries queried **in parallel**; demo chip resolves via Amivedi. Real APIs not yet integrated |
 | Notification Service | 🟡 **Skeleton** | Provider-agnostic `Notifier`; **MockNotifier** (console) live. Twilio/WhatsApp/push pending |
 | Rescue Worker UI (web MVP) | ✅ **Done** | Intake / Passport / Dashboard pages |
-| Owner mobile app | ❌ **Not started** | Gokul |
-| Rescue worker native app | ❌ **Not started** | Gokul |
-| Auth / roles / GDPR | ❌ **Not started** | See roadmap |
+| Owner mobile app | 🟡 **Skeleton** | Gokul |
+| Rescue worker | 🟡 **Skeleton** | Gokul |
+| Auth / roles / GDPR | 🟡 **Skeleton** | See roadmap |
 
 ## Tech stack
 Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres + pgvector) ·
