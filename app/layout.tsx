@@ -44,14 +44,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <div className="flex items-center gap-1 text-sm font-medium">
             <PendingBadge />
-            <Link href="/intake" className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">
-              New Intake
+            <Link href="/adopt" className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">
+              Adopt
+            </Link>
+            <Link href="/owner/search" className="px-3 py-2 rounded-lg text-white/80 hover:bg-white/10 transition-colors">
+              Lost a pet?
             </Link>
             <Link href="/dashboard" className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">
               Dashboard
-            </Link>
-            <Link href="/owner/search" className="px-3 py-2 rounded-lg text-sm text-white/80 hover:bg-white/10 transition-colors">
-              Lost a pet?
             </Link>
           </div>
         </nav>

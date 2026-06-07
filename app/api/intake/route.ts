@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     passport.biometric.embedding_dim = embedding.length;
     passport.photo_meta.image_url = imageUrl;
 
-    const animalId = await insertAnimal({ passport, embedding, imageUrl, chipNumber, status: "intake" });
+    const animalId = await insertAnimal({ passport, embedding, imageUrl, chipNumber, status: "searching" });
 
     return NextResponse.json({ animal_id: animalId, passport }, { status: 201 });
   } catch (err) {

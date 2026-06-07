@@ -1,8 +1,5 @@
 // REAL analyze() — Mistral Pixtral vision model.
 //
-// TODO: swap mockAnalyze for pixtralAnalyze in /api/intake/route.ts when ready
-//       (toggle via MOCK_VISION=false, see lib/vision/index.ts).
-//
 // Pixtral describes the animal (species/breed/coat/triage). It does NOT produce
 // the biometric embedding — that is computed separately via CLIP ViT-B-32
 // (lib/matching/vector.ts) and merged in the intake route. We return an empty

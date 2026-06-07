@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import PhotoDropzone from "@/components/PhotoDropzone";
-
-const SPECIES = ["dog", "cat", "rabbit", "bird", "other"];
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
+import { SPECIES_OPTIONS } from "@/lib/constants";
+import { fileToDataUrl } from "@/lib/file";
 
 export default function OwnerRegisterPage() {
   const [step, setStep] = useState(1);
@@ -124,7 +115,7 @@ export default function OwnerRegisterPage() {
           <div>
             <label className="block text-sm font-medium text-slate-brand mb-1.5">Species</label>
             <select value={species} onChange={(e) => setSpecies(e.target.value)} className={inputCls + " capitalize"}>
-              {SPECIES.map((s) => (
+              {SPECIES_OPTIONS.map((s) => (
                 <option key={s} value={s} className="capitalize">{s}</option>
               ))}
             </select>

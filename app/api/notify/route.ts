@@ -6,7 +6,7 @@ import { getNotifier } from "@/lib/notify";
 export const runtime = "nodejs";
 
 const SHELTER = process.env.SHELTER_NAME ?? "PawLink Rescue Shelter";
-const BASE = (process.env.CONFIRM_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const BASE = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.CONFIRM_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 export async function POST(req: Request) {
   try {

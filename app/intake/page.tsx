@@ -3,17 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addToQueue, markSynced, markFailed } from "@/lib/offlineQueue";
+import { fileToDataUrl } from "@/lib/file";
 
 const ACCEPT = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
 
 export default function IntakePage() {
   const router = useRouter();
