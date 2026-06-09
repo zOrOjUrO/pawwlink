@@ -87,4 +87,4 @@ Open `/api/health` first to confirm Supabase + vision are live, then `/intake`.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how Gokul & Maaz split the work
 
 ## License
-MIT (placeholder) — see `LICENSE`.
+AGPL-3.0 — see `LICENSE`.
