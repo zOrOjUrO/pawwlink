@@ -1,4 +1,4 @@
-# Contributing to PawLink
+# Contributing to PawwLink
 
 Thanks for your interest in contributing to PawLink.
 
