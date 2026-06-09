@@ -1,4 +1,4 @@
-# PawLink
+# PawwLink
 
 **Every paw, back home.** — AI-powered animal rescue intake & owner-reunification platform.
 
